@@ -467,7 +467,7 @@
       }
     }
   </style>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 </head>
 <body>
   <div class="container">
@@ -592,9 +592,18 @@
         
         pdfDoc.registerFontkit(fontkit);
         
-        const cairoBoldUrl = 'https://fonts.gstatic.com/s/cairo/v28/SLXgc1nY6HkvangtZmpQdkhzfH5lkSs2SgRjCAGMQ1z0hGA-W1ToLQ-HmkA.ttf';
-        const cairoBoldBytes = await fetch(cairoBoldUrl).then(res => res.arrayBuffer());
-        const arabicBoldFont = await pdfDoc.embedFont(cairoBoldBytes);
+        // Try to load local Cairo font first, fallback to online if not available
+        let arabicBoldFont;
+        try {
+          const cairoLocalBytes = await fetch('fonts/Cairo-Regular.ttf').then(res => res.arrayBuffer());
+          arabicBoldFont = await pdfDoc.embedFont(cairoLocalBytes);
+        } catch (localError) {
+          console.log('Local font not found, loading from CDN...');
+          // Fallback to Cairo Bold from Google Fonts
+          const cairoBoldUrl = 'https://fonts.gstatic.com/s/cairo/v28/SLXgc1nY6HkvangtZmpQdkhzfH5lkSs2SgRjCAGMQ1z0hGA-W1ToLQ-HmkA.ttf';
+          const cairoBoldBytes = await fetch(cairoBoldUrl).then(res => res.arrayBuffer());
+          arabicBoldFont = await pdfDoc.embedFont(cairoBoldBytes);
+        }
         
         const standardFont = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
         
@@ -609,17 +618,55 @@
           const textWidth = font.widthOfTextAtSize(text, size);
           const x = (pageWidth - textWidth) / 2;
           
-          page.drawText(text, {
-            x,
-            y,
-            size,
-            font,
-            color: rgb(0.91, 0.20, 0.55),
-          });
+          // For Arabic text, draw multiple layers to simulate extra bold/thick text
+          if (isArabic) {
+            // Draw text with multiple offsets to create very bold effect
+            const offsets = [
+              // Center
+              { dx: 0, dy: 0 },
+              // Main 4 directions
+              { dx: 0.5, dy: 0 },
+              { dx: -0.5, dy: 0 },
+              { dx: 0, dy: 0.5 },
+              { dx: 0, dy: -0.5 },
+              // Diagonals
+              { dx: 0.5, dy: 0.5 },
+              { dx: -0.5, dy: 0.5 },
+              { dx: 0.5, dy: -0.5 },
+              { dx: -0.5, dy: -0.5 },
+              // Additional layers for extra thickness
+              { dx: 0.8, dy: 0 },
+              { dx: -0.8, dy: 0 },
+              { dx: 0, dy: 0.8 },
+              { dx: 0, dy: -0.8 },
+              { dx: 0.3, dy: 0 },
+              { dx: -0.3, dy: 0 },
+              { dx: 0, dy: 0.3 },
+              { dx: 0, dy: -0.3 }
+            ];
+            
+            offsets.forEach(offset => {
+              page.drawText(text, {
+                x: x + offset.dx,
+                y: y + offset.dy,
+                size,
+                font,
+                color: rgb(0.91, 0.20, 0.55),
+              });
+            });
+          } else {
+            page.drawText(text, {
+              x,
+              y,
+              size,
+              font,
+              color: rgb(0.91, 0.20, 0.55),
+            });
+          }
         }
 
-        drawText(studentName, 295, 45);
-        drawText(courseName, 190, 40);
+        drawText(studentName, 295, 48);
+        drawText(courseName, 190, 42);
 
         const modifiedPdf = await pdfDoc.save();
         const blob = new Blob([modifiedPdf], { type: 'application/pdf' });
