@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Certificate Generator with Arabic Support</title>
+  <title>منشئ الشهادات</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     * {
       margin: 0;
@@ -12,10 +13,10 @@
     }
     
     body {
-      font-family: 'Poppins', sans-serif;
+      font-family: 'Cairo', 'Helvetica Neue', sans-serif;
       background: linear-gradient(135deg, #e8f8f2 0%, #d4f1e8 50%, #c8ede1 100%);
       color: #333;
-      text-align: center;
+      text-align: right;
       padding: 40px 20px;
       min-height: 100vh;
       display: flex;
@@ -108,7 +109,7 @@
     }
     
     .title-section {
-      text-align: left;
+      text-align: right;
     }
     
     h1 {
@@ -119,7 +120,7 @@
       margin-bottom: 8px;
       font-size: 36px;
       font-weight: 700;
-      letter-spacing: -0.5px;
+      font-family: 'Cairo', sans-serif;
     }
     
     .subtitle {
@@ -136,7 +137,7 @@
     }
     
     .form-group {
-      text-align: left;
+      text-align: right;
     }
     
     .form-group.full-width {
@@ -148,9 +149,8 @@
       margin-bottom: 10px;
       font-weight: 600;
       color: #2d3748;
-      font-size: 13px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+      font-size: 14px;
+      font-family: 'Cairo', sans-serif;
     }
     
     input {
@@ -162,7 +162,8 @@
       font-size: 16px;
       transition: all 0.3s ease;
       background: #f8fafc;
-      font-family: 'Poppins', sans-serif;
+      font-family: 'Cairo', sans-serif;
+      text-align: right;
     }
     
     input:focus {
@@ -281,9 +282,9 @@
       padding: 12px 16px;
       background: white;
       border-radius: 10px;
-      text-align: left;
+      text-align: right;
       font-weight: 500;
-      border-left: 4px solid #00d084;
+      border-right: 4px solid #00d084;
       transition: all 0.3s ease;
     }
     
@@ -367,7 +368,8 @@
       font-size: 15px;
       cursor: pointer;
       transition: all 0.3s ease;
-      text-align: center;
+      text-align: right;
+      font-family: 'Cairo', sans-serif;
       width: 100%;
       display: flex;
       align-items: center;
@@ -476,56 +478,56 @@
         <img src="logo.png" alt="Logo" class="logo" onerror="this.style.display='none'">
       </div>
       <div class="title-section">
-        <h1>Certificate Generator</h1>
-        <p class="subtitle">Create professional certificates with Arabic support</p>
+        <h1>منشئ الشهادات</h1>
+        <p class="subtitle">إنشاء شهادات بدعم من جيل كود</p>
       </div>
     </div>
 
     <div class="form-grid">
       <div class="form-group full-width">
-        <label for="pdfFile">📋 Certificate Template</label>
+        <label for="pdfFile">📋 قالب الشهادة</label>
         <div class="file-input-container">
-          <div class="file-input-button">Choose PDF Template</div>
+          <div class="file-input-button">اختر قالب PDF</div>
           <input type="file" id="pdfFile" accept="application/pdf" />
         </div>
-        <div class="file-name" id="fileName">No file selected</div>
+        <div class="file-name" id="fileName">لم يتم اختيار ملف</div>
       </div>
       
       <div class="form-group">
-        <label for="studentName">👤 Student Name</label>
-        <input type="text" id="studentName" placeholder="Enter student name" />
+        <label for="studentName">👤 اسم الطالب</label>
+        <input type="text" id="studentName" placeholder="أدخل اسم الطالب" />
       </div>
       
       <div class="form-group">
-        <label for="courseName">📚 Course Name</label>
-        <input type="text" id="courseName" placeholder="Enter course name" />
+        <label for="courseName">📚 اسم الدورة</label>
+        <input type="text" id="courseName" placeholder="أدخل اسم الدورة" />
       </div>
     </div>
 
     <div class="actions-section">
       <div class="preview">
-        <h3>Live Preview</h3>
+        <h3>المعاينة المباشرة</h3>
         <div class="preview-grid">
-          <div class="preview-text">Student: <span id="previewStudent">-</span></div>
-          <div class="preview-text">Course: <span id="previewCourse">-</span></div>
+          <div class="preview-text">الطالب: <span id="previewStudent">-</span></div>
+          <div class="preview-text">الدورة: <span id="previewCourse">-</span></div>
         </div>
       </div>
       
       <div style="display: flex; flex-direction: column; gap: 15px;">
-        <button id="generateBtn">Generate</button>
+        <button id="generateBtn">إنشاء الشهادة</button>
         <div class="loading" id="loading">
           <div class="spinner"></div>
-          <p>Processing...</p>
+          <p>جاري المعالجة...</p>
         </div>
       </div>
     </div>
     
     <div class="footer-section">
       <div class="secure-login">
-        Secure Generation - Powered by Kawkab.AI
+        إنشاء آمن - مدعوم من كوكب للذكاء الاصطناعي
       </div>
       <div class="footer">
-        © 2025 All rights reserved
+        © 2025 جميع الحقوق محفوظة
       </div>
     </div>
   </div>
@@ -536,7 +538,7 @@
     const { PDFDocument, rgb } = PDFLib;
     
     document.getElementById("pdfFile").addEventListener("change", function() {
-      const fileName = this.files[0] ? this.files[0].name : "No file selected";
+      const fileName = this.files[0] ? this.files[0].name : "لم يتم اختيار ملف";
       const fileNameElement = document.getElementById("fileName");
       fileNameElement.textContent = fileName;
       if (this.files[0]) {
@@ -575,12 +577,12 @@
       const loading = document.getElementById("loading");
 
       if (!fileInput.files[0]) {
-        alert("Please upload the certificate PDF template first.");
+        alert("الرجاء تحميل قالب الشهادة PDF أولاً.");
         return;
       }
 
       if (!studentName || !courseName) {
-        alert("Please enter both student name and course name.");
+        alert("الرجاء إدخال اسم الطالب واسم الدورة.");
         return;
       }
 
