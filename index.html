@@ -342,75 +342,6 @@
       50% { opacity: 0.5; }
     }
     
-    .file-input-container {
-      position: relative;
-      overflow: hidden;
-      display: inline-block;
-      width: 100%;
-    }
-    
-    .file-input-container input[type=file] {
-      position: absolute;
-      left: 0;
-      top: 0;
-      opacity: 0;
-      width: 100%;
-      height: 100%;
-      cursor: pointer;
-    }
-    
-    .file-input-button {
-      background: linear-gradient(135deg, #f8fafc, #f1f5f9);
-      color: #475569;
-      border: 2px dashed #cbd5e1;
-      padding: 16px 20px;
-      border-radius: 14px;
-      font-size: 15px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      text-align: right;
-      font-family: 'Cairo', sans-serif;
-      width: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      font-weight: 600;
-    }
-    
-    .file-input-button::before {
-      content: '📄';
-      font-size: 22px;
-      animation: bounce 2s ease-in-out infinite;
-    }
-    
-    @keyframes bounce {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-5px); }
-    }
-    
-    .file-input-button:hover {
-      background: linear-gradient(135deg, #e0f2fe, #dbeafe);
-      border-color: #00d084;
-      color: #00c878;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 15px rgba(0, 208, 132, 0.2);
-    }
-    
-    .file-name {
-      margin-top: 8px;
-      font-size: 13px;
-      color: #64748b;
-      text-align: left;
-      font-weight: 500;
-      padding-left: 4px;
-    }
-    
-    .file-name.selected {
-      color: #00c878;
-      font-weight: 600;
-    }
-    
     .footer-section {
       margin-top: 30px;
       padding-top: 25px;
@@ -484,15 +415,6 @@
     </div>
 
     <div class="form-grid">
-      <div class="form-group full-width">
-        <label for="pdfFile">📋 قالب الشهادة</label>
-        <div class="file-input-container">
-          <div class="file-input-button">اختر قالب PDF</div>
-          <input type="file" id="pdfFile" accept="application/pdf" />
-        </div>
-        <div class="file-name" id="fileName">لم يتم اختيار ملف</div>
-      </div>
-      
       <div class="form-group">
         <label for="studentName">👤 اسم الطالب</label>
         <input type="text" id="studentName" placeholder="أدخل اسم الطالب" />
@@ -532,22 +454,8 @@
     </div>
   </div>
 
-  <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
-  <script src="https://unpkg.com/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>
-    const { PDFDocument, rgb } = PDFLib;
-    
-    document.getElementById("pdfFile").addEventListener("change", function() {
-      const fileName = this.files[0] ? this.files[0].name : "لم يتم اختيار ملف";
-      const fileNameElement = document.getElementById("fileName");
-      fileNameElement.textContent = fileName;
-      if (this.files[0]) {
-        fileNameElement.classList.add('selected');
-      } else {
-        fileNameElement.classList.remove('selected');
-      }
-    });
-    
     document.getElementById("studentName").addEventListener("input", function() {
       document.getElementById("previewStudent").textContent = this.value || "-";
       if (containsArabic(this.value)) {
@@ -571,15 +479,9 @@
     }
     
     document.getElementById("generateBtn").addEventListener("click", async () => {
-      const fileInput = document.getElementById("pdfFile");
       const studentName = document.getElementById("studentName").value.trim();
       const courseName = document.getElementById("courseName").value.trim();
       const loading = document.getElementById("loading");
-
-      if (!fileInput.files[0]) {
-        alert("الرجاء تحميل قالب الشهادة PDF أولاً.");
-        return;
-      }
 
       if (!studentName || !courseName) {
         alert("الرجاء إدخال اسم الطالب واسم الدورة.");
@@ -589,98 +491,107 @@
       try {
         loading.style.display = "block";
         
-        const pdfBytes = await fileInput.files[0].arrayBuffer();
-        const pdfDoc = await PDFDocument.load(pdfBytes);
+        // Load the certificate image
+        const img = new Image();
+        img.crossOrigin = "anonymous";
         
-        pdfDoc.registerFontkit(fontkit);
-        
-        // Try to load local Cairo font first, fallback to online if not available
-        let arabicBoldFont;
-        try {
-          const cairoLocalBytes = await fetch('fonts/Cairo-Regular.ttf').then(res => res.arrayBuffer());
-          arabicBoldFont = await pdfDoc.embedFont(cairoLocalBytes);
-        } catch (localError) {
-          console.log('Local font not found, loading from CDN...');
-          // Fallback to Cairo Bold from Google Fonts
-          const cairoBoldUrl = 'https://fonts.gstatic.com/s/cairo/v28/SLXgc1nY6HkvangtZmpQdkhzfH5lkSs2SgRjCAGMQ1z0hGA-W1ToLQ-HmkA.ttf';
-          const cairoBoldBytes = await fetch(cairoBoldUrl).then(res => res.arrayBuffer());
-          arabicBoldFont = await pdfDoc.embedFont(cairoBoldBytes);
-        }
-        
-        const standardFont = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
-        
-        const pages = pdfDoc.getPages();
-        const page = pages[0];
-        const pageWidth = page.getWidth();
-
-        function drawText(text, y, size = 36) {
-          const isArabic = containsArabic(text);
-          const font = isArabic ? arabicBoldFont : standardFont;
+        img.onload = async function() {
+          // Create canvas
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
           
-          const textWidth = font.widthOfTextAtSize(text, size);
-          const x = (pageWidth - textWidth) / 2;
+          // Set canvas size to match image
+          canvas.width = img.width;
+          canvas.height = img.height;
           
-          // For Arabic text, draw multiple layers to simulate extra bold/thick text
-          if (isArabic) {
-            // Draw text with multiple offsets to create very bold effect
-            const offsets = [
-              // Center
-              { dx: 0, dy: 0 },
-              // Main 4 directions
-              { dx: 0.5, dy: 0 },
-              { dx: -0.5, dy: 0 },
-              { dx: 0, dy: 0.5 },
-              { dx: 0, dy: -0.5 },
-              // Diagonals
-              { dx: 0.5, dy: 0.5 },
-              { dx: -0.5, dy: 0.5 },
-              { dx: 0.5, dy: -0.5 },
-              { dx: -0.5, dy: -0.5 },
-              // Additional layers for extra thickness
-              { dx: 0.8, dy: 0 },
-              { dx: -0.8, dy: 0 },
-              { dx: 0, dy: 0.8 },
-              { dx: 0, dy: -0.8 },
-              { dx: 0.3, dy: 0 },
-              { dx: -0.3, dy: 0 },
-              { dx: 0, dy: 0.3 },
-              { dx: 0, dy: -0.3 }
-            ];
-            
-            offsets.forEach(offset => {
-              page.drawText(text, {
-                x: x + offset.dx,
-                y: y + offset.dy,
-                size,
-                font,
-                color: rgb(0.91, 0.20, 0.55),
-              });
-            });
+          // Draw the certificate image
+          ctx.drawImage(img, 0, 0);
+          
+          // Set text properties
+          ctx.textAlign = 'center';
+          ctx.fillStyle = '#e83490'; // Pink color (rgb(0.91, 0.20, 0.55))
+          
+          // Load Cairo font for Arabic text
+          const cairoFont = new FontFace('Cairo', 'url(https://fonts.gstatic.com/s/cairo/v28/SLXgc1nY6HkvangtZmpQdkhzfH5lkSs2SgRjCAGMQ1z0hGA-W1ToLQ-HmkA.ttf)');
+          await cairoFont.load();
+          document.fonts.add(cairoFont);
+          
+          // Draw student name (bold, larger)
+          const isStudentArabic = containsArabic(studentName);
+          ctx.font = isStudentArabic ? 'bold 85px Cairo' : 'bold 85px Arial';
+          
+          // Create bold effect by drawing multiple times with slight offsets
+          const studentY = canvas.height * 0.52; // Adjust position as needed
+          const studentX = canvas.width / 2;
+          
+          if (isStudentArabic) {
+            // Extra bold for Arabic
+            for (let i = -1; i <= 1; i += 0.5) {
+              for (let j = -1; j <= 1; j += 0.5) {
+                ctx.fillText(studentName, studentX + i, studentY + j);
+              }
+            }
           } else {
-            page.drawText(text, {
-              x,
-              y,
-              size,
-              font,
-              color: rgb(0.91, 0.20, 0.55),
-            });
+            ctx.fillText(studentName, studentX, studentY);
           }
-        }
-
-        drawText(studentName, 295, 48);
-        drawText(courseName, 190, 42);
-
-        const modifiedPdf = await pdfDoc.save();
-        const blob = new Blob([modifiedPdf], { type: 'application/pdf' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = 'Certificate_' + studentName.replace(/\s+/g, '_') + '.pdf';
-        link.click();
+          
+          // Draw course name
+          const isCourseArabic = containsArabic(courseName);
+          ctx.font = isCourseArabic ? 'bold 85px Cairo' : 'bold 85px Arial';
+          
+          const courseY = canvas.height * 0.68; // Adjust position as needed
+          const courseX = canvas.width / 2;
+          
+          if (isCourseArabic) {
+            // Extra bold for Arabic
+            for (let i = -1; i <= 1; i += 0.5) {
+              for (let j = -1; j <= 1; j += 0.5) {
+                ctx.fillText(courseName, courseX + i, courseY + j);
+              }
+            }
+          } else {
+            ctx.fillText(courseName, courseX, courseY);
+          }
+          
+          // Convert canvas to image data
+          const imageData = canvas.toDataURL('image/jpeg', 1.0);
+          
+          // Create PDF using jsPDF
+          const { jsPDF } = window.jspdf;
+          
+          // Determine PDF orientation based on image dimensions
+          const orientation = img.width > img.height ? 'landscape' : 'portrait';
+          
+          // Create PDF with image dimensions (convert px to mm, assuming 96 DPI)
+          const pdfWidth = img.width * 0.264583; // Convert px to mm
+          const pdfHeight = img.height * 0.264583;
+          
+          const pdf = new jsPDF({
+            orientation: orientation,
+            unit: 'mm',
+            format: [pdfWidth, pdfHeight]
+          });
+          
+          // Add image to PDF
+          pdf.addImage(imageData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+          
+          // Download PDF
+          pdf.save('Certificate_' + studentName.replace(/\s+/g, '_') + '.pdf');
+          
+          loading.style.display = "none";
+        };
         
-        loading.style.display = "none";
+        img.onerror = function() {
+          alert("خطأ: لم يتم العثور على الصورة 'test.jpg'. يرجى التأكد من وجود الملف في نفس المجلد.");
+          loading.style.display = "none";
+        };
+        
+        // Load the fixed certificate image
+        img.src = 'test.jpg';
+        
       } catch (error) {
         console.error("Error generating certificate:", error);
-        alert("An error occurred while generating the certificate. Please check the console for details.");
+        alert("حدث خطأ أثناء إنشاء الشهادة. يرجى التحقق من Console للحصول على التفاصيل.");
         loading.style.display = "none";
       }
     });
