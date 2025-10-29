@@ -309,18 +309,16 @@
         document.getElementById('loginForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
-            const email = document.getElementById('email').value;
+            const email = document.getElementById('email').value.toLowerCase().trim();
             const password = document.getElementById('password').value;
             const errorMessage = document.getElementById('errorMessage');
             
             // Encrypted credentials (Base64 encoded)
-            // To encode your own: btoa('your-email@example.com')
-            // To decode: atob('encoded_string')
             const validEmailEncoded = 'emFoYUBrYXdrYWIuYWk=';
             const validPasswordEncoded = 'a2F3a2FiLmFp'; 
             
             // Decode credentials for comparison
-            const validEmail = atob(validEmailEncoded);
+            const validEmail = atob(validEmailEncoded).toLowerCase();
             const validPassword = atob(validPasswordEncoded);
             
             if (email === validEmail && password === validPassword) {
